@@ -1,10 +1,10 @@
 #include "global.h"
 #include "draw.h"
+#include "uitest.h"
 #include <sstream>
 #include <cstdlib>
 #include <exception>
 #include <algorithm>
-#include <cmath>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -14,6 +14,7 @@ namespace draw {
 
 SDL_Window* window=nullptr;
 SDL_Renderer* renderer=nullptr;
+SDL_Texture* simtex = nullptr;
 
 //implementation details- similar practice to what boost does
 namespace detail {
@@ -28,15 +29,20 @@ void loop() {
   frame();
 }
 
+//used to make complaining when things go wrong quicker/easier
+void sdlthrow(const char* message) {
+    std::ostringstream out;
+    out << message << " error: " << SDL_GetError();
+    throw std::runtime_error(out.str());
+}
+
 }
 using namespace detail;
 
 void init(int32 w,int32 h,const char* title) {
   //initialize SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    std::ostringstream out;
-    out << "failed to initialize SDL.  error: " << SDL_GetError();
-    throw std::runtime_error(out.str());
+    sdlthrow("failed to initialize SDL.");
   }
   std::atexit(SDL_Quit);
 
@@ -47,6 +53,8 @@ void init(int32 w,int32 h,const char* title) {
     0);
   renderer = SDL_CreateRenderer(window, -1, 0);
 
+  uitest::init();
+
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, FPS, 1);
 #else
@@ -54,41 +62,22 @@ void init(int32 w,int32 h,const char* title) {
     uint32 tstart = SDL_GetTicks();
     loop();
     int32 tdiff=SDL_GetTicks()-tstart,
-      tsleep=std::max(0,(int32) (1000/FPS - tdiff));
+      tsleep=std::max(0, (int32) (1000/FPS - tdiff));
     SDL_Delay(tsleep);
   }
 #endif
 }
 
 void frame() {
-  using std::sin;
-  using std::cos;
-
-  static double t=0;
-  const static double dt=1.0/FPS;
-  int w,h;
-  size(&w,&h);
-
-  double theta1=t;
-  double theta2=t*1.618;
-
-  setRGB(0xffffff);
-  clear();
-  setRGB(0xff0000);
-  line(
-    w*(cos(theta1)*0.8+1)/2,
-    h*(sin(theta1)*0.8+1)/2,
-    w*(cos(theta2)*0.8+1)/2,
-    h*(sin(theta2)*0.8+1)/2);
-  present();
-
-  t+=dt;
+  uitest::frame();
 }
 void event(SDL_Event& e) {
 }
 
-void size(int* w, int* h) {
-  SDL_GetWindowSize(window, w, h);
+SDL_Point winSize() {
+  SDL_Point size;
+  SDL_GetWindowSize(window, &size.x, &size.y);
+  return size;
 }
 
 void clear() {
@@ -112,6 +101,29 @@ void setRGBA(uint32 rgb) {
 
 void line(int x1, int y1, int x2, int y2) {
   SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+}
+
+SDL_Texture* createTex(int w, int h) {
+  SDL_Texture* tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+    SDL_TEXTUREACCESS_STREAMING, w, h);
+  if(tex==nullptr) {
+    sdlthrow("failed to create texture.");
+  }
+  return tex;
+}
+
+TexData lockTex(SDL_Texture* tex) {
+  TexData td;
+
+  int err = SDL_LockTexture(tex, nullptr,
+    reinterpret_cast<void **>(&td.bytes), &td.pitch);
+  if(err != 0) {
+    sdlthrow("failed to lock texture.");
+  }
+  return td;
+}
+void unlockTex(SDL_Texture* tex) {
+  SDL_UnlockTexture(tex);
 }
 
 }
