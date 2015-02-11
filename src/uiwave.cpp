@@ -2,7 +2,6 @@
 #include "uiwave.h"
 #include "draw.h"
 #include "WaveSim.h"
-#include <cmath>
 
 namespace uiwave {
 
@@ -23,7 +22,8 @@ void init() {
     h = size.y;
   graph = createTex(w, h);
 
-  ws = new WaveSim(w, h, 1, 0.05);
+  //width, height, c, h, damp
+  ws = new WaveSim(w, h, 3, 0.05, 0.0025);
 }
 
 void frame() {

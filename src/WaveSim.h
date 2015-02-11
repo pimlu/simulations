@@ -13,10 +13,10 @@ class WaveSim {
   void set(simnum* state, int x, int y, simnum v);
 public:
   int width, height;
-  simnum c, h;
-  WaveSim(int width, int height, simnum c, simnum h);
+  simnum c, h, damp;
+  WaveSim(int width, int height, simnum c, simnum h, simnum damp);
   ~WaveSim();
 
   simnum* getstate();
-  simnum* tick(simnum t);
+  simnum* tick(simnum dt);
 };
