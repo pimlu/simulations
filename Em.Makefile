@@ -1,7 +1,7 @@
 CC=em++
 CFLAGS=-c -O3 -Wall -std=c++11 -s USE_SDL=2
 LDFLAGS=-O3 -s USE_SDL=2
-SFILES=main.cpp draw.cpp uitest.cpp
+SFILES=main.cpp draw.cpp uitest.cpp uiwave.cpp WaveSim.cpp
 SOURCES:=$(shell echo $(SFILES) | xargs -n1 -I% echo src/%)
 OBJECTS:=$(SFILES:%.cpp=build/%.bc)
 EXECUTABLE=dist/sims.html

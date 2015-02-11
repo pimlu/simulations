@@ -1,3 +1,4 @@
+#include "global.h"
 #include "uitest.h"
 #include "draw.h"
 #include <cmath>
@@ -5,11 +6,13 @@
 namespace uitest {
 
 using namespace draw;
+Demo demo = {init, frame, event};
 
 //the texture we use to render mandelbrot on
-SDL_Texture* mandelbrot;
+SDL_Texture* mandelbrot = nullptr;
 
 void init() {
+  SDL_DestroyTexture(mandelbrot);
 
   cout << "running rendering test code..." << endl;
 
@@ -17,8 +20,7 @@ void init() {
   int w = size.x,
     h = size.y;
 
-  mandelbrot = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-    SDL_TEXTUREACCESS_STREAMING, w, h);
+  mandelbrot = createTex(w, h);
 
   TexData td = lockTex(mandelbrot);
 
@@ -84,6 +86,10 @@ void frame() {
   present();
 
   t+=dt;
+}
+
+void event(SDL_Event& e) {
+
 }
 
 }

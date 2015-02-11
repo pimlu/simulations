@@ -1,10 +1,15 @@
 #include "global.h"
 #include "draw.h"
+
+#include "Demo.h"
 #include "uitest.h"
+#include "uiwave.h"
+
 #include <sstream>
 #include <cstdlib>
 #include <exception>
 #include <algorithm>
+
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -19,13 +24,26 @@ SDL_Texture* simtex = nullptr;
 //implementation details- similar practice to what boost does
 namespace detail {
 
+const int FPS_SAMPLE=3*60;
 //used as a wrapper to make emscripten easier
 void loop() {
   static SDL_Event e;
+
+  //simple FPS counter here
+  static int count = 0;
+  static uint32 tlast = SDL_GetTicks();
+  if(++count == FPS_SAMPLE) {
+    count = 0;
+    uint32 now = SDL_GetTicks();
+    cout << "FPS: " << 1000.0 * FPS_SAMPLE / (now-tlast) << endl;
+    tlast = now;
+  }
+
   while(SDL_PollEvent(&e)) {
     if(e.type == SDL_QUIT) std::exit(0);
     event(e);
   }
+
   frame();
 }
 
@@ -35,6 +53,10 @@ void sdlthrow(const char* message) {
     out << message << " error: " << SDL_GetError();
     throw std::runtime_error(out.str());
 }
+
+//application specific- here we decide which demo to use
+Demo demos[] = {uitest::demo, uiwave::demo};
+int cycle = 0, cycles = 2;
 
 }
 using namespace detail;
@@ -53,10 +75,11 @@ void init(int32 w,int32 h,const char* title) {
     0);
   renderer = SDL_CreateRenderer(window, -1, 0);
 
-  uitest::init();
+  demos[cycle].init();
 
 #ifdef __EMSCRIPTEN__
-  emscripten_set_main_loop(loop, FPS, 1);
+  //if fps is 60, we use 0 instead, which makes emscripten try to use RAF
+  emscripten_set_main_loop(loop, FPS==60?0:FPS, 1);
 #else
   while(true) {
     uint32 tstart = SDL_GetTicks();
@@ -68,10 +91,15 @@ void init(int32 w,int32 h,const char* title) {
 #endif
 }
 
+//application specific- here we decide which demo to use
 void frame() {
-  uitest::frame();
+  demos[cycle].frame();
 }
 void event(SDL_Event& e) {
+  if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_SPACE) {
+    cycle = (cycle+1)%cycles;
+    demos[cycle].init();
+  }
 }
 
 SDL_Point winSize() {
