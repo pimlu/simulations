@@ -5,19 +5,9 @@
 WaveSim::WaveSim(int width_, int height_, simnum c_, simnum h_, simnum damp_)
   : width(width_+2), height(height_+2), c(c_), h(h_), damp(damp_) {
 
+  for(int i=0;i<2;i++) waves[i] = new simnum[width*height]();
 
-  //puts a little circle on our board.  does it to both boards to zero velocity
-  for(int i=0;i<2;i++) {
-    waves[i] = new simnum[width*height]();
-    simnum* cur = waves[i];
-    for(int y = 1; y < height-1; y++) {
-      for(int x = 1; x < width-1; x++) {
-        int dx=x-width/2, dy=y-height/2;
-        cur[y*width+x] = 200/(1+dx*dx+dy*dy);
-      }
-    }
-  }
-
+  poke(width/2,height/2);
 }
 
 WaveSim::~WaveSim() {
@@ -66,4 +56,14 @@ simnum* WaveSim::tick(simnum dt) {
   }
   //last is now the newest thanks to our setting it
   return last;
+}
+
+void WaveSim::poke(int ix, int iy) {
+  simnum* cur = waves[cycle];
+  for(int y = 1; y < height-1; y++) {
+    for(int x = 1; x < width-1; x++) {
+      int dx=x-ix, dy=y-iy;
+      cur[y*width+x] += 10/(1+dx*dx+dy*dy);
+    }
+  }
 }

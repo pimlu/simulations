@@ -17,13 +17,13 @@ void init() {
 
   cout << "doing wave equation..." << endl;
 
-  SDL_Point size=winSize();
+  SDL_Point size = winSize();
   int w = size.x,
     h = size.y;
   graph = createTex(w, h);
 
   //width, height, c, h, damp
-  ws = new WaveSim(w, h, 3, 0.05, 0.0025);
+  ws = new WaveSim(w, h, 3, 0.05, 0.005);
 }
 
 void frame() {
@@ -31,7 +31,7 @@ void frame() {
   clear();
 
 
-  SDL_Point size=winSize();
+  SDL_Point size = winSize();
   int w = size.x,
       h = size.y;
 
@@ -62,7 +62,9 @@ void frame() {
 }
 
 void event(SDL_Event& e) {
-
+  if(e.type == SDL_MOUSEBUTTONDOWN) {
+    ws->poke(e.button.x, e.button.y);
+  }
 }
 
 }

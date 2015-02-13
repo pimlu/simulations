@@ -2,6 +2,13 @@
 #include "global.h"
 #include <vector>
 #include <SDL2/SDL.h>
+
+#ifdef __EMSCRIPTEN__
+#include <SDL/SDL_ttf.h>
+#else
+#include <SDL2_ttf/SDL_ttf.h>
+#endif
+
 /**
  * Represents an SDL window with some built-in draw functions.
  */
@@ -36,6 +43,17 @@ SDL_Point winSize();
 void clear();
 /// Renders draw commands to the window.
 void present();
+/// Creates a sans serif TTF font of size pt.
+TTF_Font* openSans(int pt);
+/// Converts hex RGBA of the form 0xRRGGBBAA into an SDL_Color struct.
+SDL_Color colorRGBA(uint32 rgba);
+/**
+ * @brief Renders a given string to an SDL texture.
+ * @param font The font to use.
+ * @param text The string to render.
+ * @param color The color to render with, of the form 0xRRGGBBAA.
+ */
+SDL_Texture* drawText(TTF_Font* font, const char *text, uint32 color);
 /**
  * @brief Sets the color to be used in drawing operations.
  * @param rgb The color, represended in hex as 0xRRGGBB.
@@ -54,6 +72,11 @@ void line(int x1, int y1, int x2, int y2);
   * @param h The texture height.
  */
 SDL_Texture* createTex(int w, int h);
+/**
+  * @brief Creates an RGBA8888 streaming texture from a surface.
+  * @param surf The surface
+ */
+SDL_Texture* createTex(SDL_Surface* surf);
 /**
  * @brief Locks a given texture, allowing direct writing.
  * @param tex The pointer to the texture to lock.

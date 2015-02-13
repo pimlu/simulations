@@ -10,15 +10,22 @@ Demo demo = {init, frame, event};
 
 //the texture we use to render mandelbrot on
 SDL_Texture* mandelbrot = nullptr;
+//rendered text
+SDL_Texture* text = nullptr;
 
 void init() {
   SDL_DestroyTexture(mandelbrot);
+  SDL_DestroyTexture(text);
 
   cout << "running rendering test code..." << endl;
 
-  SDL_Point size=winSize();
+  SDL_Point size = winSize();
   int w = size.x,
     h = size.y;
+
+  TTF_Font* sans = openSans(24);
+  text = drawText(sans, "press space to cycle demos", 0);
+  TTF_CloseFont(sans);
 
   mandelbrot = createTex(w, h);
 
@@ -65,7 +72,7 @@ void frame() {
   using namespace draw;
   static double t=0;
   const static double dt=1.0/FPS;
-  SDL_Point size=winSize();
+  SDL_Point size = winSize();
   int w = size.x,
     h = size.y;
 
@@ -75,7 +82,12 @@ void frame() {
   setRGB(0xffffff);
   clear();
 
+  //FIXME implement cleaner versions of these functions
   SDL_RenderCopy(renderer, mandelbrot, nullptr, nullptr);
+  int tw, th;
+  SDL_QueryTexture(text, nullptr, nullptr, &tw, &th);
+  SDL_Rect rect = {10,0,tw,th};
+  SDL_RenderCopy(renderer, text, nullptr, &rect);
 
   setRGB(0xff0000);
   line(

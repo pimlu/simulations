@@ -19,7 +19,6 @@ namespace draw {
 
 SDL_Window* window=nullptr;
 SDL_Renderer* renderer=nullptr;
-SDL_Texture* simtex = nullptr;
 
 //implementation details- similar practice to what boost does
 namespace detail {
@@ -53,6 +52,11 @@ void sdlthrow(const char* message) {
     out << message << " error: " << SDL_GetError();
     throw std::runtime_error(out.str());
 }
+void ttfthrow(const char* message) {
+    std::ostringstream out;
+    out << message << " error: " << TTF_GetError();
+    throw std::runtime_error(out.str());
+}
 
 //application specific- here we decide which demo to use
 Demo demos[] = {uitest::demo, uiwave::demo};
@@ -67,6 +71,8 @@ void init(int32 w,int32 h,const char* title) {
     sdlthrow("failed to initialize SDL.");
   }
   std::atexit(SDL_Quit);
+
+  TTF_Init();
 
   //create our window and renderer
   window = SDL_CreateWindow(title,
@@ -100,6 +106,7 @@ void event(SDL_Event& e) {
     cycle = (cycle+1)%cycles;
     demos[cycle].init();
   }
+  demos[cycle].event(e);
 }
 
 SDL_Point winSize() {
@@ -115,16 +122,39 @@ void present() {
   SDL_RenderPresent(renderer);
 }
 
+
+TTF_Font* openSans(int pt) {
+#ifdef __EMSCRIPTEN__
+  const char* name = "sans-serif";
+#else
+  const char* name = "data/OpenSans-Regular.ttf";
+#endif
+  TTF_Font* font = TTF_OpenFont(name, pt);
+  if(!font) ttfthrow("failed to open font Open Sans.");
+  return font;
+}
+
+SDL_Texture* drawText(TTF_Font* font, const char *text, uint32 color) {
+  SDL_Surface *surface = TTF_RenderText_Solid(font, text, colorRGBA(color));
+  if(!surface) ttfthrow("failed to render text to surface.");
+  SDL_Texture *texture = createTex(surface);
+  SDL_FreeSurface(surface);
+  return texture;
+}
+SDL_Color colorRGBA(uint32 rgba) {
+  SDL_Color c;
+  c.a=rgba%256; rgba>>=8;
+  c.b=rgba%256; rgba>>=8;
+  c.g=rgba%256; rgba>>=8;
+  c.r=rgba%256;
+  return c;
+}
 void setRGB(uint32 rgb) {
   setRGBA((rgb << 8) + SDL_ALPHA_OPAQUE);
 }
-void setRGBA(uint32 rgb) {
-  fuint8 r,g,b,a;
-  a=rgb%256; rgb>>=8;
-  b=rgb%256; rgb>>=8;
-  g=rgb%256; rgb>>=8;
-  r=rgb%256;
-  SDL_SetRenderDrawColor(renderer, r,g,b,a);
+void setRGBA(uint32 rgba) {
+  SDL_Color c = colorRGBA(rgba);
+  SDL_SetRenderDrawColor(renderer, c.r,c.g,c.b,c.a);
 }
 
 void line(int x1, int y1, int x2, int y2) {
@@ -134,9 +164,32 @@ void line(int x1, int y1, int x2, int y2) {
 SDL_Texture* createTex(int w, int h) {
   SDL_Texture* tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
     SDL_TEXTUREACCESS_STREAMING, w, h);
-  if(tex==nullptr) {
-    sdlthrow("failed to create texture.");
+  if(!tex) sdlthrow("failed to create texture.");
+  return tex;
+}
+
+SDL_Texture* createTex(SDL_Surface* surf) {
+
+  /*
+  //test surface debugging code to solve emscripten issues- will be removed soon
+  int w = surf->w, h = surf->h;
+
+  cout << surf->format->format << endl;
+  cout << (int) surf->format->BytesPerPixel << endl;
+  unsigned char* pixels = (unsigned char*) surf->pixels;
+  int bpp = surf->format->BytesPerPixel;
+  for(int y=0;y<h;y++) {
+    for(int x=0;x<w*bpp;x++) {
+      int surfpos=y*surf->pitch+x;
+      cout<< (pixels[surfpos] ? '#' : '.');
+    }
+    cout<<endl;
   }
+  */
+
+  SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
+  if(!tex) sdlthrow("failed to create texture from surface.");
+  SDL_SetTextureBlendMode(tex,SDL_BLENDMODE_BLEND);
   return tex;
 }
 

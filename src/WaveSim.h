@@ -19,4 +19,5 @@ public:
 
   simnum* getstate();
   simnum* tick(simnum dt);
+  void poke(int x, int y);
 };
