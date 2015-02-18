@@ -8,17 +8,16 @@ EXECUTABLE=sims.html
 
 all: $(SOURCES) dist/$(EXECUTABLE)
 
-dist/$(EXECUTABLE): mkdirs $(OBJECTS) | dist/data
+dist/$(EXECUTABLE): $(OBJECTS) | dist/data
+	@mkdir -p dist
 	$(CXX) $(OBJECTS) $(LDFLAGS) -o $@
 
 build/%.bc: src/%.cpp
+	@mkdir -p build
 	$(CXX) $(CFLAGS) $< -o $@
 
 dist/data: data
 	cp -r $< $@
-
-mkdirs:
-	@mkdir -p dist build
 
 clean:
 	rm -f $(OBJECTS)
